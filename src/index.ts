@@ -2,6 +2,10 @@ import express, { Request, Response } from "express";
 import { brotliDecompress } from "zlib";
 const app = express();
 const port = process.env.PORT || 3000;
+
+const jsonBodyMiddleware = express.json();
+app.use(jsonBodyMiddleware);
+
 type TypeVidios = {
   id: number;
   title: string;
@@ -13,17 +17,17 @@ type TypeVidios = {
   availableResolutions: Array<string | null>;
 };
 
-let bd: Array<TypeVidios> = [];
+let bd: { videos: TypeVidios[] } = { videos: [] };
 
-app.get("/", (req: Request, res: Response) => {
-  res.send("Hello SAMURAI!");
+app.get("/videos", (req: Request, res: Response) => {
+  res.status(200).json(bd.videos);
 });
 
-app.post("/", (req: Request, res: Response) => {
+app.post("/videos", (req: Request, res: Response) => {
   //тайтл
 
   if (!req.body.title) {
-    res.status(400).send({
+    res.status(400).json({
       errorsMessages: [
         {
           message: "Write title",
@@ -34,7 +38,7 @@ app.post("/", (req: Request, res: Response) => {
     return;
   }
   if (req.body.title.length > 40) {
-    res.status(400).send({
+    res.status(400).json({
       errorsMessages: [
         {
           message: "Write title less 40 symbols",
@@ -48,7 +52,7 @@ app.post("/", (req: Request, res: Response) => {
   //автор
 
   if (req.body.author.length > 20) {
-    res.status(400).send({
+    res.status(400).json({
       errorsMessages: [
         {
           message: "Write author less 20 symbols",
@@ -59,7 +63,7 @@ app.post("/", (req: Request, res: Response) => {
     return;
   }
   if (!req.body.author) {
-    res.status(400).send({
+    res.status(400).json({
       errorsMessages: [
         {
           message: "Write author",
@@ -73,18 +77,18 @@ app.post("/", (req: Request, res: Response) => {
   //айди
 
   let newId = 0;
-  if (bd.length === 0) {
+  if (bd.videos.length === 0) {
     newId = 0;
-  } else if (bd.length === 1) {
-    if (bd[0].id !== 0) {
+  } else if (bd.videos.length === 1) {
+    if (bd.videos[0].id !== 0) {
       newId = 0;
     } else {
       newId = 1;
     }
   } else {
-    for (let i = 0; i < bd.length; i++) {
-      if (bd[i + 1].id - bd[i].id !== 1) {
-        newId = bd[i].id + 1;
+    for (let i = 0; i < bd.videos.length; i++) {
+      if (bd.videos[i + 1].id - bd.videos[i].id !== 1) {
+        newId = bd.videos[i].id + 1;
       }
     }
   }
@@ -106,7 +110,7 @@ app.post("/", (req: Request, res: Response) => {
     req.body.minAgeRestriction < 1 &&
     req.body.minAgeRestriction > 18
   ) {
-    res.status(400).send({
+    res.status(400).json({
       errorsMessages: [
         {
           message: "Please write age less than 18 included",
@@ -123,17 +127,23 @@ app.post("/", (req: Request, res: Response) => {
   if (!req.body.createdAt) {
     createDate = new Date().toISOString();
   } else {
-    createDate = req.body.createdAt.toISOString();
+    let a = Date.parse(req.body.createdAt);
+    let b = new Date(a);
+    let c = b.toISOString();
+    createDate = c;
   }
 
   //публикация
   let publicDate: string;
-  if (!req.body.publicationDate) {
-    var today = new Date();
+  let v = Date.parse(req.body.publicationDate);
+  if (!req.body.publicationDate || Date.parse(createDate) > v) {
+    var today = new Date(createDate);
     let nextDate = new Date(today.getTime() + 24 * 60 * 60 * 1000);
     publicDate = nextDate.toISOString();
   } else {
-    publicDate = req.body.createdAt.toISOString();
+    let n = new Date(v);
+    let l = n.toISOString();
+    publicDate = l;
   }
 
   //разрешения
@@ -152,7 +162,7 @@ app.post("/", (req: Request, res: Response) => {
   ];
 
   if (!req.body.availableResolutions) {
-    res.status(400).send({
+    res.status(400).json({
       errorsMessages: [
         {
           message:
@@ -165,7 +175,7 @@ app.post("/", (req: Request, res: Response) => {
   } else {
     for (let i = 0; i < req.body.availableResolutions.length; i++) {
       if (arrayResolutions.indexOf(req.body.availableResolutions[i]) === -1) {
-        res.status(400).send({
+        res.status(400).json({
           errorsMessages: [
             {
               message:
@@ -191,7 +201,33 @@ app.post("/", (req: Request, res: Response) => {
     publicationDate: publicDate,
     availableResolutions: razreshenie,
   };
+
+  bd.videos.push(createVideo);
+  res.status(201).json(createVideo);
 });
+
+app.get("/videos/:id", (req: Request, res: Response) => {
+  let id: number = +req.params.id;
+  let oneVideo = bd.videos.find((p) => p.id === id);
+  if (oneVideo) {
+    res.status(200).json(oneVideo);
+  } else {
+    res.send(404);
+  }
+});
+
+app.put("/videos/:id", (req: Request, res: Response) => {
+  
+  let id: number = +req.params.id;
+  let oneVideo = bd.videos.find((p) => p.id === id);
+  if (oneVideo) {
+    res.status(200).json(oneVideo);
+  } else {
+    res.send(404);
+  }
+});
+
+
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
