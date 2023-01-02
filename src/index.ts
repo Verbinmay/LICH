@@ -16,7 +16,7 @@ function errorMessage(a: string, b: string) {
   };
 }
 
-type TypeVidios = {
+export type TypeVidios = {
   id: number;
   title: string;
   author: string;
