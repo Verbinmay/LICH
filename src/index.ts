@@ -254,8 +254,8 @@ app.put(
     let id: number = +req.params.id;
 
     let search = bd.videos.find((p) => p.id === id);
-    if (search === undefined) {
-      res.status(404);
+    if (search == undefined) {
+      res.send(404);
     } else {
       let thisVideo: {
         id: number;

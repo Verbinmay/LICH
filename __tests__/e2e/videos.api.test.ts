@@ -200,8 +200,8 @@ describe("/videos", () => {
   });
 
 
-  it("Should return status 204 and update post", async () => {
-    const createResponse = await request(app)
+  it("Should return status 204", async () => {
+     await request(app)
       .put("/videos/0")
       .send({
         title: "Murmansk",
@@ -210,9 +210,13 @@ describe("/videos", () => {
         availableResolutions: ["P144"],
       })
       .expect(204);
-      let createdVideo = createResponse.body;
 
-    expect(createdVideo).toEqual({
+      const updateVideo = await request(app)
+      .get("/videos")
+      .expect(200)
+      const createdVideo = updateVideo.body;
+
+    expect(createdVideo).toEqual([{
       id: 0,
       title: "Murmansk",
       author: "Tom Braun",
@@ -221,7 +225,7 @@ describe("/videos", () => {
       createdAt: expect.any(String),
       publicationDate: expect.any(String),
       availableResolutions: ["P144"],
-    });
+    }]);
   });
 
   it("Should return status 400 and error (title>40)", async () => {
