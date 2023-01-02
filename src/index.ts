@@ -1,11 +1,20 @@
 import express, { Request, Response } from "express";
-import { isNull } from "util";
-import { brotliDecompress } from "zlib";
 const app = express();
 const port = process.env.PORT || 3000;
 
 const jsonBodyMiddleware = express.json();
 app.use(jsonBodyMiddleware);
+
+function errorMessage(a: string, b: string) {
+  return {
+    errorsMessages: [
+      {
+        message: a,
+        field: b,
+      },
+    ],
+  };
+}
 
 type TypeVidios = {
   id: number;
@@ -46,50 +55,26 @@ app.post(
     //тайтл
 
     if (!req.body.title) {
-      res.status(400).json({
-        errorsMessages: [
-          {
-            message: "Write title",
-            field: "Title",
-          },
-        ],
-      });
+      res.status(400).json(errorMessage("Write title", "title"));
       return;
     }
     if (req.body.title.length > 40) {
-      res.status(400).json({
-        errorsMessages: [
-          {
-            message: "Write title less 40 symbols",
-            field: "Title",
-          },
-        ],
-      });
+      res
+        .status(400)
+        .json(errorMessage("Write title less 40 symbols", "title"));
       return;
     }
 
     //автор
 
     if (req.body.author.length > 20) {
-      res.status(400).json({
-        errorsMessages: [
-          {
-            message: "Write author less 20 symbols",
-            field: "Author",
-          },
-        ],
-      });
+      res
+        .status(400)
+        .json(errorMessage("Write author less 20 symbols", "author"));
       return;
     }
     if (!req.body.author) {
-      res.status(400).json({
-        errorsMessages: [
-          {
-            message: "Write author",
-            field: "Author",
-          },
-        ],
-      });
+      res.status(400).json(errorMessage("Write author", "Author"));
       return;
     }
 
@@ -126,7 +111,7 @@ app.post(
     //canBeDownloaded
 
     let canDownloaded: boolean;
-    if (req.body.canBeDownloaded===true) {
+    if (req.body.canBeDownloaded === true) {
       canDownloaded = true;
     } else {
       canDownloaded = false;
@@ -141,14 +126,14 @@ app.post(
       req.body.minAgeRestriction < 1 ||
       req.body.minAgeRestriction > 18
     ) {
-      res.status(400).json({
-        errorsMessages: [
-          {
-            message: "Please write age less than 18 included",
-            field: "minAgeRestriction",
-          },
-        ],
-      });
+      res
+        .status(400)
+        .json(
+          errorMessage(
+            "Please write age less than 18 included",
+            "minAgeRestriction"
+          )
+        );
       return;
     } else {
       ageReg = req.body.minAgeRestriction;
@@ -193,39 +178,36 @@ app.post(
     ];
 
     if (!req.body.availableResolutions) {
-      res.status(400).json({
-        errorsMessages: [
-          {
-            message:
-              "Please write right resolution:[ P144, P240, P360, P480, P720, P1080, P1440, P2160 ]",
-            field: "availableResolutions",
-          },
-        ],
-      });
+      res
+        .status(400)
+        .json(
+          errorMessage(
+            'Please write right resolution:[ "P144", "P240", "P360", "P480", "P720", "P1080", "P1440", "P2160" ]',
+            "availableResolutions"
+          )
+        );
       return;
     } else if (req.body.availableResolutions.length === 0) {
-      res.status(400).json({
-        errorsMessages: [
-          {
-            message:
-              "Please write right resolution:[ P144, P240, P360, P480, P720, P1080, P1440, P2160 ]",
-            field: "availableResolutions",
-          },
-        ],
-      });
+      res
+        .status(400)
+        .json(
+          errorMessage(
+            'Please write right resolution:[ "P144", "P240", "P360", "P480", "P720", "P1080", "P1440", "P2160" ]',
+            "availableResolutions"
+          )
+        );
       return;
     } else {
       for (let i = 0; i < req.body.availableResolutions.length; i++) {
         if (arrayResolutions.indexOf(req.body.availableResolutions[i]) === -1) {
-          res.status(400).json({
-            errorsMessages: [
-              {
-                message:
-                  "Please write right resolution:[ P144, P240, P360, P480, P720, P1080, P1440, P2160 ]",
-                field: "availableResolutions",
-              },
-            ],
-          });
+          res
+            .status(400)
+            .json(
+              errorMessage(
+                'Please write right resolution:[ "P144", "P240", "P360", "P480", "P720", "P1080", "P1440", "P2160" ]',
+                "availableResolutions"
+              )
+            );
           return;
         } else {
           razreshenie = req.body.availableResolutions;
@@ -259,141 +241,150 @@ app.get("/videos/:id", (req: Request, res: Response) => {
   }
 });
 
-app.put("/videos/:id", (req: Request<
-  {id:string},
-  {},
-  {
-    id: number;
-    title: string;
-    author: string;
-    canBeDownloaded: boolean;
-    minAgeRestriction: number | null;
-    createdAt: string;
-    publicationDate: string;
-    availableResolutions: Array<string>;
-  }
->, res: Response) => {
-
-  let id: number = +req.params.id;
-  let thisVideo = bd.videos.find((p) => p.id === id);
-
-  let dublicatVideo = thisVideo;
-  if (dublicatVideo) {
-    if (req.body.title) {
-      if (req.body.title.length > 40) {
-        res.status(400).json({
-          errorsMessages: [
-            {
-              message: "Write title less 40 symbols",
-              field: "Title",
-            },
-          ],
-        });
-        return;
+app.put(
+  "/videos/:id",
+  (
+    req: Request<
+      { id: string },
+      {},
+      {
+        id: number;
+        title: string;
+        author: string;
+        canBeDownloaded: boolean;
+        minAgeRestriction: number | null;
+        createdAt: string;
+        publicationDate: string;
+        availableResolutions: Array<string>;
       }
-      dublicatVideo.title = req.body.title;
-    }
-    //автор
-    if (req.body.author) {
-      if (req.body.author.length > 20) {
-        res.status(400).json({
-          errorsMessages: [
-            {
-              message: "Write author less 20 symbols",
-              field: "Author",
-            },
-          ],
-        });
-        return;
+    >,
+    res: Response
+  ) => {
+    let id: number = +req.params.id;
+    let thisVideo = bd.videos.find((p) => p.id === id);
+
+    let dublicatVideo = thisVideo;
+    if (dublicatVideo) {
+      if (req.body.title) {
+        if (req.body.title.length > 40) {
+          res
+            .status(400)
+            .json(errorMessage("Write title less 40 symbols", "title"));
+          return;
+        }
+        dublicatVideo.title = req.body.title;
       }
-      dublicatVideo.author = req.body.author;
-    }
-    //canDownloaded
-    if (req.body.canBeDownloaded === true||false) {
-      dublicatVideo.canBeDownloaded = req.body.canBeDownloaded;
-    }
+      //автор
+      if (req.body.author) {
+        if (req.body.author.length > 20) {
+          res
+            .status(400)
+            .json(errorMessage("Write author less 20 symbols", "Author"));
+          return;
+        }
+        dublicatVideo.author = req.body.author;
+      }
+      //canDownloaded
+      if (req.body.canBeDownloaded === true || false) {
+        dublicatVideo.canBeDownloaded = req.body.canBeDownloaded;
+      }
 
-    //minAgeRestriction
-    if (req.body.minAgeRestriction!==null) {
-      let ageReg: number;
-      if (
-        req.body.minAgeRestriction > 18||req.body.minAgeRestriction < 1
-      ) {
-        res.status(400).json({
-          errorsMessages: [
-            {
-              message: "Please write age less than 18 included",
-              field: "minAgeRestriction",
-            },
-          ],
-        });
-        return;
+      //minAgeRestriction
+      if (req.body.minAgeRestriction !== null) {
+        let ageReg: number;
+        if (req.body.minAgeRestriction > 18 || req.body.minAgeRestriction < 1) {
+          res
+            .status(400)
+            .json(
+              errorMessage(
+                "Please write age less than 18 included",
+                "minAgeRestriction"
+              )
+            );
+          return;
+        } else {
+          ageReg = req.body.minAgeRestriction;
+          dublicatVideo.minAgeRestriction = ageReg;
+        }
       } else {
-        ageReg = req.body.minAgeRestriction;
-        dublicatVideo.minAgeRestriction = ageReg;
-      }} else {
-      dublicatVideo.minAgeRestriction =null;}
+        dublicatVideo.minAgeRestriction = null;
+      }
 
-    //публикация
+      //публикация
 
-    let publicDate: string;
-    publicDate = new Date().toISOString();
-    dublicatVideo.publicationDate = publicDate;
+      let publicDate: string;
+      publicDate = new Date().toISOString();
+      dublicatVideo.publicationDate = publicDate;
 
-    //разрешения
+      //разрешения
 
-    let razreshenie: Array<string> = [];
+      let razreshenie: Array<string> = [];
 
-    const arrayResolutions = [
-      "P144",
-      "P240",
-      "P360",
-      "P480",
-      "P720",
-      "P1080",
-      "P1440",
-      "P2160",
-    ];
+      const arrayResolutions = [
+        "P144",
+        "P240",
+        "P360",
+        "P480",
+        "P720",
+        "P1080",
+        "P1440",
+        "P2160",
+      ];
 
-    if (req.body.availableResolutions) {
-      if (!req.body.availableResolutions) {
-        res.status(400).json({
-          errorsMessages: [
-            {
-              message:
-                "Please write right resolution:[ P144, P240, P360, P480, P720, P1080, P1440, P2160 ]",
-              field: "availableResolutions",
-            },
-          ],
-        });
-        return;
-      } else {
-        for (let i = 0; i < req.body.availableResolutions.length; i++) {
-          if (
-            arrayResolutions.indexOf(req.body.availableResolutions[i]) === -1
-          ) {
-            res.status(400).json({
-              errorsMessages: [
-                {
-                  message:
-                    "Please write right resolution:[ P144, P240, P360, P480, P720, P1080, P1440, P2160 ]",
-                  field: "availableResolutions",
-                },
-              ],
-            });
-            return;
-          } else {
-            razreshenie = req.body.availableResolutions;
-            dublicatVideo.availableResolutions = razreshenie;
+      if (req.body.availableResolutions) {
+        if (req.body.availableResolutions.length === 0) {
+          res
+            .status(400)
+            .json(
+              errorMessage(
+                'Please write right resolution:[ "P144", "P240", "P360", "P480", "P720", "P1080", "P1440", "P2160" ]',
+                "availableResolutions"
+              )
+            );
+          return;
+        } else {
+          for (let i = 0; i < req.body.availableResolutions.length; i++) {
+            if (
+              arrayResolutions.indexOf(req.body.availableResolutions[i]) === -1
+            ) {
+              res
+                .status(400)
+                .json(
+                  errorMessage(
+                    'Please write right resolution:[ "P144", "P240", "P360", "P480", "P720", "P1080", "P1440", "P2160" ]',
+                    "availableResolutions"
+                  )
+                );
+              return;
+            } else {
+              razreshenie = req.body.availableResolutions;
+              dublicatVideo.availableResolutions = razreshenie;
+            }
           }
         }
       }
+      thisVideo = dublicatVideo;
+      res.status(200).json(thisVideo);
+    } else {
+      res.send(404);
     }
-    thisVideo = dublicatVideo;
-    res.status(200).json(thisVideo);
-  } else {
-    res.send(404);
   }
+);
+
+app.delete("/videos/:id", (req: Request, res: Response) => {
+  let id: number = +req.params.id;
+  let oneVideo = bd.videos.find((p) => p.id === id);
+  if (oneVideo === undefined) {
+    res.send(404);
+  } else {
+    bd.videos = bd.videos.filter((p) => p.id !== id);
+    res.send(204);
+  }
+});
+
+app.delete("/testing/all-data", (req: Request, res: Response) => {
+  bd.videos = [];
+  res.send(204);
 });
 
 app.listen(port, () => {
