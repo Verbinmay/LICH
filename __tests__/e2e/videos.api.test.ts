@@ -188,7 +188,7 @@ describe("/videos", () => {
 
   ////////////////
 
-  it("Should return status 400 and error (no title)", async () => {
+  it("Should return status 404 and error (no id)", async () => {
     await request(app)
       .put("/videos/88")
       .send({
@@ -199,7 +199,8 @@ describe("/videos", () => {
       .expect(404);
   });
 
-  it("Should return status 201 and update post", async () => {
+
+  it("Should return status 204 and update post", async () => {
     const createResponse = await request(app)
       .put("/videos/0")
       .send({
@@ -208,8 +209,8 @@ describe("/videos", () => {
         minAgeRestriction: 3,
         availableResolutions: ["P144"],
       })
-      .expect(200);
-    let createdVideo = createResponse.body;
+      .expect(204);
+      let createdVideo = createResponse.body;
 
     expect(createdVideo).toEqual({
       id: 0,
@@ -234,6 +235,7 @@ describe("/videos", () => {
       })
       .expect(400);
   });
+
 
   it("Should return status 400 and error (author>20)", async () => {
     await request(app)
@@ -281,10 +283,16 @@ describe("/videos", () => {
   });
 
   it("Should return status 404 and error (no id)", async () => {
-    await request(app).delete("/videos/88").expect(404);
+    await request(app)
+      .delete("/videos/88")
+      .expect(404);
+  });
+  
+  it("Should return status 204", async () => {
+    await request(app)
+      .delete("/videos/0")
+      .expect(204);
   });
 
-  it("Should return status 204", async () => {
-    await request(app).delete("/videos/0").expect(204);
-  });
+
 });
