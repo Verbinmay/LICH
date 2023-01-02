@@ -172,9 +172,9 @@ describe("/videos", () => {
   it("Should return status 200 and id 0 video", async () => {
     const createResponse = await request(app).get("/videos/0").expect(200);
 
-    let createdCourse = createResponse.body;
+    let createdVideo = createResponse.body;
 
-    expect(createdCourse).toEqual({
+    expect(createdVideo).toEqual({
       id: 0,
       title: "New York",
       author: "Tom Braun",
@@ -184,5 +184,107 @@ describe("/videos", () => {
       publicationDate: expect.any(String),
       availableResolutions: ["P144"],
     });
+  });
+
+  ////////////////
+
+  it("Should return status 400 and error (no title)", async () => {
+    await request(app)
+      .put("/videos/88")
+      .send({
+        title: "Murmansk",
+        author: "Tom Braun",
+        availableResolutions: ["P144"],
+      })
+      .expect(404);
+  });
+
+  it("Should return status 201 and update post", async () => {
+    const createResponse = await request(app)
+      .put("/videos/0")
+      .send({
+        title: "Murmansk",
+        author: "Tom Braun",
+        minAgeRestriction: 3,
+        availableResolutions: ["P144"],
+      })
+      .expect(200);
+    let createdVideo = createResponse.body;
+
+    expect(createdVideo).toEqual({
+      id: 0,
+      title: "Murmansk",
+      author: "Tom Braun",
+      canBeDownloaded: false,
+      minAgeRestriction: 3,
+      createdAt: expect.any(String),
+      publicationDate: expect.any(String),
+      availableResolutions: ["P144"],
+    });
+  });
+
+  it("Should return status 400 and error (title>40)", async () => {
+    await request(app)
+      .put("/videos/0")
+      .send({
+        title:
+          "New YorkNew YorkNew YorkNew YorkNew YorkNew YorkNew YorkNew YorkNew YorkNew York",
+        author: "Tom Braun",
+        availableResolutions: ["P144"],
+      })
+      .expect(400);
+  });
+
+  it("Should return status 400 and error (author>20)", async () => {
+    await request(app)
+      .put("/videos/0")
+      .send({
+        title: "New York",
+        author: "Tom BraunTom BraunTom BraunTom BraunTom Braun",
+        availableResolutions: ["P144"],
+      })
+      .expect(400);
+  });
+
+  it("Should return status 400 and error (1<=minAgeRestriction<=18)", async () => {
+    await request(app)
+      .put("/videos/0")
+      .send({
+        title: "New York",
+        author: "Tom Braun",
+        minAgeRestriction: 19,
+        availableResolutions: ["P144"],
+      })
+      .expect(400);
+  });
+
+  it("Should return status 400 and error ( availableResolutions isnt right)", async () => {
+    await request(app)
+      .put("/videos/0")
+      .send({
+        title: "New York",
+        author: "Tom Braun",
+        availableResolutions: ["P144", "366"],
+      })
+      .expect(400);
+  });
+
+  it("Should return status 400 and error ( availableResolutions [])", async () => {
+    await request(app)
+      .put("/videos/0")
+      .send({
+        title: "New York",
+        author: "Tom Braun",
+        availableResolutions: [],
+      })
+      .expect(400);
+  });
+
+  it("Should return status 404 and error (no id)", async () => {
+    await request(app).delete("/videos/88").expect(404);
+  });
+
+  it("Should return status 204", async () => {
+    await request(app).delete("/videos/0").expect(204);
   });
 });
